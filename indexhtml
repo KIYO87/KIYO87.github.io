@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>木材の柾目・板目シミュレーター</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 2px solid #333;
+            display: block;
+            background: #fff8dc;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .label {
+            font-weight: bold;
+            margin-top: 10px;
+            color: #333;
+        }
+        .description {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌳 木材の柾目・板目シミュレーター</h1>
+    
+    <div class="container">
+        <div class="section">
+            <h2>丸太の輪切り</h2>
+            <canvas id="logCanvas" width="300" height="300"></canvas>
+            <div class="controls">
+                <div class="label">切る角度（度）:</div>
+                <input type="range" id="angleSlider" min="0" max="180" value="0" step="5">
+                <div id="angleDisplay">0°</div>
+                <button onclick="resetAngle()">リセット</button>
+            </div>
+            <div class="description">
+                丸太に切り方を変えて、柾目と板目がどのように現れるかを見てみましょう。
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>切り口の年輪パターン</h2>
+            <canvas id="patternCanvas" width="300" height="300"></canvas>
+            <div class="controls">
+                <div class="label">年輪の間隔:</div>
+                <input type="range" id="ringsSlider" min="5" max="30" value="15" step="1">
+                <div id="ringsDisplay">15</div>
+                <button onclick="resetRings()">リセット</button>
+            </div>
+            <div class="description">
+                <strong>柾目：</strong>年輪が平行に見える<br>
+                <strong>板目：</strong>年輪が放射状（扇型）に見える
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 丸太の描画
+        function drawLog() {
+            const canvas = document.getElementById('logCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 120;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 丸太（円）を描画
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 年輪を描画
+            for (let i = 1; i < 8; i++) {
+                ctx.strokeStyle = `rgba(139, 69, 19, ${0.3 + i * 0.05})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius - i * 15, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // 切断線を描画
+            const angle = (parseFloat(document.getElementById('angleSlider').value) * Math.PI) / 180;
+            const lineLength = radius * 1.5;
+
+            ctx.strokeStyle = '#FF6B6B';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(centerX - Math.cos(angle) * lineLength, centerY - Math.sin(angle) * lineLength);
+            ctx.lineTo(centerX + Math.cos(angle) * lineLength, centerY + Math.sin(angle) * lineLength);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 判定テキスト
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            const angleValue = parseFloat(document.getElementById('angleSlider').value);
+            let pattern = '';
+            if (angleValue > 70 && angleValue < 110) {
+                pattern = '柾目';
+                ctx.fillStyle = '#FF6B6B';
+            } else if (angleValue <= 10 || angleValue >= 170) {
+                pattern = '板目';
+                ctx.fillStyle = '#4CAF50';
+            } else {
+                pattern = '混合型';
+                ctx.fillStyle = '#FFD700';
+            }
+            ctx.fillText(`現在: ${pattern}`, centerX, canvas.height - 20);
+        }
+
+        // パターン表示の描画
+        function drawPattern() {
+            const canvas = document.getElementById('patternCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 120;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const ringSpacing = parseInt(document.getElementById('ringsSlider').value);
+
+            // 柾目パターン（左側）
+            ctx.fillStyle = '#E8D7C3';
+            ctx.fillRect(0, 0, canvas.width / 2, canvas.height);
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < canvas.width / 2; i += ringSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('柾目', canvas.width / 4, canvas.height - 20);
+
+            // 板目パターン（右側）
+            ctx.fillStyle = '#E8D7C3';
+            ctx.fillRect(canvas.width / 2, 0, canvas.width / 2, canvas.height);
+            
+            // 年輪を放射状に描画
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 8; i++) {
+                const arcRadius = 20 + i * ringSpacing * 0.8;
+                ctx.beginPath();
+                ctx.arc(canvas.width / 2, centerY, arcRadius, 0, Math.PI);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#333';
+            ctx.fillText('板目', (canvas.width / 4) * 3, canvas.height - 20);
+        }
+
+        // イベントリスナー
+        document.getElementById('angleSlider').addEventListener('input', function() {
+            document.getElementById('angleDisplay').textContent = this.value + '°';
+            drawLog();
+        });
+
+        document.getElementById('ringsSlider').addEventListener('input', function() {
+            document.getElementById('ringsDisplay').textContent = this.value;
+            drawPattern();
+        });
+
+        function resetAngle() {
+            document.getElementById('angleSlider').value = 0;
+            document.getElementById('angleDisplay').textContent = '0°';
+            drawLog();
+        }
+
+        function resetRings() {
+            document.getElementById('ringsSlider').value = 15;
+            document.getElementById('ringsDisplay').textContent = '15';
+            drawPattern();
+        }
+
+        // 初期描画
+        drawLog();
+        drawPattern();
+    </script>
+</body>
+</html>
