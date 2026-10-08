@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>木材加工シミュレーター：立木から丸太・板の切り出しと木目観察</title>
+    <title>木材加工　シミュレーター：立木から丸太・板の切り出しと木目観察</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
